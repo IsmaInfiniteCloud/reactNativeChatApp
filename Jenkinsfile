@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent any 
 
     stages {
         stage('Checkout') {
@@ -10,7 +10,7 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                sh 'npm ci'
             }
         }
 
@@ -22,6 +22,13 @@ pipeline {
 
         stage('TypeScript Compilation') {
             steps {
+                script {
+                    // Check if TypeScript is installed
+                    def hasTypeScript = sh(script: 'npm list typescript', returnStatus: true) == 0
+                    if (!hasTypeScript) {
+                        sh 'npm install typescript'
+                    }
+                }
                 sh './node_modules/.bin/tsc --noEmit'
             }
         }
@@ -29,6 +36,11 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh 'npm test'
+            }
+            post {
+                always {
+                    junit '**/test-results.xml'
+                }
             }
         }
 
@@ -40,8 +52,10 @@ pipeline {
     }
 
     post {
-        always {
-            archiveArtifacts artifacts: '**/lib/**', allowEmptyArchive: true
+        failure {
+            mail to: 'team@example.com',
+                 subject: 'Build Failed',
+                 body: 'Check Jenkins for details.'
         }
     }
 }
