@@ -10,67 +10,38 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                script {
-                    // Ensure the correct TypeScript and type definitions are installed
-                    sh 'npm install'
-                    sh 'npm install @types/react@latest @types/react-native@latest typescript@latest'
-                }
+                sh 'npm install'
             }
         }
 
         stage('Linting') {
             steps {
-                script {
-                    // Run linting
-                    sh 'npm run lint'
-                }
+                sh 'npm run lint'
             }
         }
 
-        stage('Type Checking') {
+        stage('TypeScript Compilation') {
             steps {
-                script {
-                    // Run TypeScript compiler
-                    try {
-                        sh 'npm run tsc'
-                    } catch (Exception e) {
-                        echo 'TypeScript compilation failed!'
-                        throw e
-                    }
-                }
+                sh './node_modules/.bin/tsc --noEmit'
             }
         }
 
-        stage('Testing') {
+        stage('Run Tests') {
             steps {
-                script {
-                    // Run tests
-                    sh 'npm run test'
-                }
+                sh 'npm test'
             }
         }
 
-        stage('Build') {
+        stage('Build Project') {
             steps {
-                script {
-                    // Build the project
-                    sh 'npm run build'
-                }
+                sh 'npm run build'
             }
         }
     }
 
     post {
         always {
-            // Cleanup
-            echo 'Cleaning up...'
-            sh 'rm -rf node_modules'
-        }
-        success {
-            echo 'Build and tests succeeded!'
-        }
-        failure {
-            echo 'Something went wrong...'
+            archiveArtifacts artifacts: '**/lib/**', allowEmptyArchive: true
         }
     }
 }
